@@ -1,0 +1,25 @@
+# mihomo-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mihomo-config
+  namespace: mihomo
+data:
+
+  # file-like keys
+  config.yaml: |
+    xxxx
+
+---
+# mihomo-iptables.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mihomo-iptables
+  namespace: mihomo
+data:
+
+  # file-like keys
+  iptables.sh: >
+    #!/bin/sh
+    echo "xxxx"

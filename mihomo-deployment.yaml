@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mihomo-deployment
+  namespace: mihomo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mihomo
+  template:
+    metadata:
+      labels:
+        app: mihomo
+      # Use annotation to specify the network interface
+      annotations:
+        k8s.v1.cni.cncf.io/networks: 'mihomo-home-lan'
+    spec:
+      # User nodeselector if needed
+      nodeName: master
+      containers:
+      - name: mihomo
+        image: metacubex/mihomo:Alpha
+        imagePullPolicy: IfNotPresent
+        # This will execute the script to configure iptables after mihomo starts up
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "/root/iptables.sh"]
+        securityContext:
+          privileged: true
+          capabilities:
+            add: ["NET_ADMIN"]
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: 512Mi
+          requests:
+            cpu: "250m"
+            memory: 256Mi
+        env:
+        - name: TZ
+          value: Asia/Shanghai
+        ports:
+        - containerPort: 53
+          name: dns
+        - containerPort: 7890
+          name: mixed-port
+        - containerPort: 9999
+          name: api
+        - containerPort: 7893
+          name: tproxy-port
+        volumeMounts:
+        - name: mihomo-config
+          mountPath: /root/.config/mihomo/config.yaml
+          subPath: config.yaml
+        - name: mihomo-volume
+          mountPath: /root/.config/mihomo
+        - name: iptables
+          mountPath: /root/iptables.sh
+          subPath: iptables.sh
+      volumes:
+      - name: mihomo-volume
+        hostPath:
+          path: /root/mihomo
+      - name: mihomo-config
+        configMap:
+          name: mihomo-config
+      - name: iptables
+        configMap:
+          name: mihomo-iptables
+          # This will change the iptables.sh file mode to 755, so that it can be executed by root user
+          defaultMode: 0744
