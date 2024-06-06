@@ -1,0 +1,70 @@
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: deployment-restart
+  namespace: <YOUR NAMESPACE>
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deployment-restart
+  namespace: <YOUR NAMESPACE>
+rules:
+  - apiGroups: ["apps", "extensions"]
+    resources: ["deployments"]
+    resourceNames: ["<YOUR DEPLOYMENT NAME>"]
+    verbs: ["get", "patch", "list", "watch"] 
+---
+# bind the role to the service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployment-restart
+  namespace: <YOUR NAMESPACE>
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: deployment-restart
+subjects:
+  - kind: ServiceAccount
+    name: deployment-restart
+    namespace: <YOUR NAMESPACE>
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: deployment-restart
+  namespace: <YOUR NAMESPACE>
+spec:
+  schedule: 0 3 * * *
+  concurrencyPolicy: Allow
+  suspend: false
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 600
+      backoffLimit: 2
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl
+              command:
+                - bash
+                - '-c'
+                - >-
+                  kubectl rollout restart deployment/mihomo-deployment &&
+                  kubectl rollout status deployment/mihomo-deployment
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: Always
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          serviceAccountName: deployment-restart
+          serviceAccount: deployment-restart
+          securityContext: {}
+          schedulerName: default-scheduler

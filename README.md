@@ -2,6 +2,15 @@
 
 Deploy mihomo(clash-meta) as transparent proxy gateway in Kubernetes
 
+## Notice
+
+Recently, I found that Mihomo has some problems after being deployed for a while. It appears to be a memory leak issue that has been raised on [Github](https://github.com/MetaCubeX/mihomo/issues/405).
+Some Mihomo users have reported the memory leak problem. To address this issue, I have created a cronjob to redeploy Mihomo every day. Mihomo functions well after being redeployed.
+
+The `cronjob-restart.yaml` is the configuration for this cronjob.
+
+easy to use `kubectl apply -f cronjob-restart.yaml`, don't forget to set `<YOUR NAMESPACE>`.
+
 ## Environments
 
 My cluster is a 3 nodes K3s cluster, upstream router is Openwrt. Mihomo will be deployed in the master node, and will be used as a gateway for transparent proxying.
